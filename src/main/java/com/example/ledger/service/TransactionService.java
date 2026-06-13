@@ -121,7 +121,7 @@ public class TransactionService {
             "TRANSACTION",
             TransactionResponse.class,
             () -> {
-                // Locking ordenado por ID para evitar deadlock
+                // Ordered locking by ID to prevent deadlock
                 UUID firstId  = request.sourceAccountId().compareTo(request.destinationAccountId()) < 0
                     ? request.sourceAccountId() : request.destinationAccountId();
                 UUID secondId = request.sourceAccountId().compareTo(request.destinationAccountId()) < 0
