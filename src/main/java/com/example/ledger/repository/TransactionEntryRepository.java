@@ -14,14 +14,17 @@ import java.util.UUID;
 @Repository
 public interface TransactionEntryRepository extends JpaRepository<TransactionEntry, UUID> {
 
-    @Query("""
-        SELECT e FROM TransactionEntry e
-        JOIN FETCH e.transaction t
-        WHERE e.account.id = :accountId
-        AND (:from IS NULL OR e.createdAt >= :from)
-        AND (:to IS NULL OR e.createdAt <= :to)
-        ORDER BY e.createdAt DESC
-        """)
+    @Query(
+        value = "SELECT e FROM TransactionEntry e JOIN FETCH e.transaction t " +
+                "WHERE e.account.id = :accountId " +
+                "AND e.createdAt >= :from " +
+                "AND e.createdAt <= :to " +
+                "ORDER BY e.createdAt DESC",
+        countQuery = "SELECT COUNT(e) FROM TransactionEntry e " +
+                     "WHERE e.account.id = :accountId " +
+                     "AND e.createdAt >= :from " +
+                     "AND e.createdAt <= :to"
+    )
     Page<TransactionEntry> findByAccountId(
         @Param("accountId") UUID accountId,
         @Param("from") LocalDateTime from,
