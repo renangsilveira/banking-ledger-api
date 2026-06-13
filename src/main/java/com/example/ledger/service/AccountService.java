@@ -8,6 +8,8 @@ import com.example.ledger.exception.AccountNotFoundException;
 import com.example.ledger.mapper.AccountMapper;
 import com.example.ledger.repository.AccountRepository;
 import com.example.ledger.service.IdempotencyService.IdempotencyResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +17,8 @@ import java.util.UUID;
 
 @Service
 public class AccountService {
+
+    private static final Logger log = LoggerFactory.getLogger(AccountService.class);
 
     private final AccountRepository accountRepository;
     private final IdempotencyService idempotencyService;
@@ -27,6 +31,7 @@ public class AccountService {
 
     @Transactional
     public AccountResponse create(CreateAccountRequest request, String idempotencyKey) {
+        log.info("Creating account for holder={}", request.holderName());
         return idempotencyService.executeIdempotent(
             idempotencyKey,
             "ACCOUNT",
@@ -40,6 +45,7 @@ public class AccountService {
                 );
                 account.setAccountNumber(generateAccountNumber());
                 Account saved = accountRepository.save(account);
+                log.info("Account created id={}", saved.getId());
                 AccountResponse response = AccountMapper.toResponse(saved);
                 return new IdempotencyResult<>(response, saved.getId(), 201);
             },
