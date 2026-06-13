@@ -24,17 +24,17 @@ public class IdempotencyService {
         this.objectMapper = objectMapper;
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> T executeIdempotent(String key, String entityType, Supplier<IdempotencyResult<T>> operation) {
+    public <T> T executeIdempotent(
+            String key,
+            String entityType,
+            Class<T> responseType,
+            Supplier<IdempotencyResult<T>> operation,
+            Supplier<T> onDuplicate) {
+
         Optional<IdempotencyKey> existing = idempotencyKeyRepository.findByKey(key);
 
         if (existing.isPresent()) {
-            IdempotencyKey ik = existing.get();
-            try {
-                return (T) objectMapper.readValue(ik.getResponseBody(), Object.class);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to deserialize cached response", e);
-            }
+            return onDuplicate.get();
         }
 
         IdempotencyResult<T> result = operation.get();

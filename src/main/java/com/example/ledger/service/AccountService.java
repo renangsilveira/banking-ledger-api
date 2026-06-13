@@ -1,7 +1,6 @@
 package com.example.ledger.service;
 
 import com.example.ledger.domain.account.Account;
-import com.example.ledger.domain.account.AccountType;
 import com.example.ledger.dto.request.CreateAccountRequest;
 import com.example.ledger.dto.response.AccountResponse;
 import com.example.ledger.dto.response.BalanceResponse;
@@ -31,6 +30,7 @@ public class AccountService {
         return idempotencyService.executeIdempotent(
             idempotencyKey,
             "ACCOUNT",
+            AccountResponse.class,
             () -> {
                 Account account = Account.open(
                     request.holderName(),
@@ -42,7 +42,10 @@ public class AccountService {
                 Account saved = accountRepository.save(account);
                 AccountResponse response = AccountMapper.toResponse(saved);
                 return new IdempotencyResult<>(response, saved.getId(), 201);
-            }
+            },
+            () -> accountRepository.findByIdempotencyKey(idempotencyKey)
+                    .map(AccountMapper::toResponse)
+                    .orElseThrow(() -> new AccountNotFoundException(UUID.randomUUID()))
         );
     }
 
