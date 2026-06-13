@@ -32,6 +32,17 @@ management:
   endpoint:
     health:
       show-details: always
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: banking-ledger-api
+    description: Double-entry banking ledger API
+    version: 1.0.0
+    java-version: 21
+    framework: Spring Boot 3.4.1
 
 logging:
   pattern:
