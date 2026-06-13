@@ -7,6 +7,7 @@ import com.example.ledger.domain.transaction.Transaction;
 import com.example.ledger.domain.transaction.TransactionEntry;
 import com.example.ledger.domain.transaction.TransactionType;
 import com.example.ledger.dto.request.DepositRequest;
+import com.example.ledger.dto.request.TransferRequest;
 import com.example.ledger.dto.request.WithdrawRequest;
 import com.example.ledger.dto.response.TransactionResponse;
 import com.example.ledger.exception.AccountNotFoundException;
@@ -58,28 +59,15 @@ public class TransactionService {
                     MDC.get("correlationId")
                 );
 
-                tx.addEntry(TransactionEntry.of(
-                    account,
-                    EntryType.CREDIT,
-                    amount,
-                    balanceBefore,
-                    account.getBalance().getAmount()
-                ));
-
-                // Double-entry: external source debit entry
-                tx.addEntry(TransactionEntry.of(
-                    account,
-                    EntryType.DEBIT,
-                    amount,
-                    balanceBefore,
-                    balanceBefore
-                ));
+                tx.addEntry(TransactionEntry.of(account, EntryType.CREDIT, amount,
+                    balanceBefore, account.getBalance().getAmount()));
+                tx.addEntry(TransactionEntry.of(account, EntryType.DEBIT, amount,
+                    balanceBefore, balanceBefore));
 
                 transactionRepository.save(tx);
                 accountRepository.save(account);
 
-                TransactionResponse response = TransactionMapper.toResponse(tx);
-                return new IdempotencyResult<>(response, tx.getId(), 201);
+                return new IdempotencyResult<>(TransactionMapper.toResponse(tx), tx.getId(), 201);
             },
             () -> transactionRepository.findByIdempotencyKey(idempotencyKey)
                     .map(TransactionMapper::toResponse)
@@ -110,27 +98,69 @@ public class TransactionService {
                     MDC.get("correlationId")
                 );
 
-                tx.addEntry(TransactionEntry.of(
-                    account,
-                    EntryType.DEBIT,
-                    amount,
-                    balanceBefore,
-                    account.getBalance().getAmount()
-                ));
-
-                tx.addEntry(TransactionEntry.of(
-                    account,
-                    EntryType.CREDIT,
-                    amount,
-                    balanceBefore,
-                    balanceBefore
-                ));
+                tx.addEntry(TransactionEntry.of(account, EntryType.DEBIT, amount,
+                    balanceBefore, account.getBalance().getAmount()));
+                tx.addEntry(TransactionEntry.of(account, EntryType.CREDIT, amount,
+                    balanceBefore, balanceBefore));
 
                 transactionRepository.save(tx);
                 accountRepository.save(account);
 
-                TransactionResponse response = TransactionMapper.toResponse(tx);
-                return new IdempotencyResult<>(response, tx.getId(), 201);
+                return new IdempotencyResult<>(TransactionMapper.toResponse(tx), tx.getId(), 201);
+            },
+            () -> transactionRepository.findByIdempotencyKey(idempotencyKey)
+                    .map(TransactionMapper::toResponse)
+                    .orElseThrow(() -> new AccountNotFoundException(UUID.randomUUID()))
+        );
+    }
+
+    @Transactional
+    public TransactionResponse transfer(TransferRequest request, String idempotencyKey) {
+        return idempotencyService.executeIdempotent(
+            idempotencyKey,
+            "TRANSACTION",
+            TransactionResponse.class,
+            () -> {
+                // Locking ordenado por ID para evitar deadlock
+                UUID firstId  = request.sourceAccountId().compareTo(request.destinationAccountId()) < 0
+                    ? request.sourceAccountId() : request.destinationAccountId();
+                UUID secondId = request.sourceAccountId().compareTo(request.destinationAccountId()) < 0
+                    ? request.destinationAccountId() : request.sourceAccountId();
+
+                Account first  = accountRepository.findByIdWithLock(firstId)
+                    .orElseThrow(() -> new AccountNotFoundException(firstId));
+                Account second = accountRepository.findByIdWithLock(secondId)
+                    .orElseThrow(() -> new AccountNotFoundException(secondId));
+
+                Account source      = first.getId().equals(request.sourceAccountId()) ? first : second;
+                Account destination = first.getId().equals(request.sourceAccountId()) ? second : first;
+
+                Money amount = Money.of(request.amount(), request.currency());
+
+                long sourceBalanceBefore = source.getBalance().getAmount();
+                long destBalanceBefore   = destination.getBalance().getAmount();
+
+                source.debit(amount);
+                destination.credit(amount);
+
+                Transaction tx = Transaction.create(
+                    idempotencyKey,
+                    TransactionType.TRANSFER,
+                    amount,
+                    request.description(),
+                    MDC.get("correlationId")
+                );
+
+                tx.addEntry(TransactionEntry.of(source, EntryType.DEBIT, amount,
+                    sourceBalanceBefore, source.getBalance().getAmount()));
+                tx.addEntry(TransactionEntry.of(destination, EntryType.CREDIT, amount,
+                    destBalanceBefore, destination.getBalance().getAmount()));
+
+                transactionRepository.save(tx);
+                accountRepository.save(source);
+                accountRepository.save(destination);
+
+                return new IdempotencyResult<>(TransactionMapper.toResponse(tx), tx.getId(), 201);
             },
             () -> transactionRepository.findByIdempotencyKey(idempotencyKey)
                     .map(TransactionMapper::toResponse)
