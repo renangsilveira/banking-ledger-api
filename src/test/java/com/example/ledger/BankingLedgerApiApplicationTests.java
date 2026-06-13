@@ -1,13 +1,11 @@
 package com.example.ledger;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
 class BankingLedgerApiApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
-
+    @Test
+    void contextLoads() {
+        // Context loading is tested via IntegrationTestBase with Testcontainers
+    }
 }

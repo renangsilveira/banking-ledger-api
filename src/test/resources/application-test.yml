@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/banking_ledger
+    username: ledger
+    password: ledger
+  jpa:
+    show-sql: false
+  flyway:
+    enabled: true
