@@ -46,6 +46,13 @@ jobs:
           DATABASE_USERNAME: ledger
           DATABASE_PASSWORD: ledger
 
+      - name: Check coverage gate
+        run: ./gradlew jacocoTestCoverageVerification
+        env:
+          DATABASE_URL: jdbc:postgresql://localhost:5432/banking_ledger
+          DATABASE_USERNAME: ledger
+          DATABASE_PASSWORD: ledger
+
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()
