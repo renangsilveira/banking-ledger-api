@@ -208,3 +208,9 @@ Every request receives a correlation ID (from `X-Correlation-Id` header or auto-
 - OpenTelemetry distributed tracing
 - Optimistic locking migration for read-heavy workloads
 - Scheduled job for idempotency key cleanup
+
+## License
+
+[#license](#license)
+
+MIT © Renan G. Silveira
