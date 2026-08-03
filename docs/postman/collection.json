@@ -1,0 +1,106 @@
+{
+  "info": {
+    "name": "banking-ledger-api",
+    "description": "Double-entry banking ledger API — accounts, deposits, withdrawals, transfers, statements.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "accountId", "value": "" },
+    { "key": "destinationAccountId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/actuator/health", "host": [ "{{baseUrl}}" ], "path": [ "actuator", "health" ] }
+      }
+    },
+    {
+      "name": "Create account",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "{{$randomUUID}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"holderName\": \"John Doe\",\n  \"accountType\": \"CHECKING\",\n  \"currency\": \"BRL\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/accounts", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "accounts" ] }
+      }
+    },
+    {
+      "name": "Get account by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "accounts", "{{accountId}}" ] }
+      }
+    },
+    {
+      "name": "Get account balance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/balance", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "accounts", "{{accountId}}", "balance" ] }
+      }
+    },
+    {
+      "name": "Get account statement",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/statement", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "accounts", "{{accountId}}", "statement" ] }
+      }
+    },
+    {
+      "name": "Deposit funds",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "{{$randomUUID}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accountId\": \"{{accountId}}\",\n  \"amount\": 1000.00,\n  \"currency\": \"BRL\",\n  \"description\": \"Initial deposit\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/transactions/deposit", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "transactions", "deposit" ] }
+      }
+    },
+    {
+      "name": "Withdraw funds",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "{{$randomUUID}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accountId\": \"{{accountId}}\",\n  \"amount\": 200.00,\n  \"currency\": \"BRL\",\n  \"description\": \"ATM withdrawal\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/transactions/withdraw", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "transactions", "withdraw" ] }
+      }
+    },
+    {
+      "name": "Transfer between accounts",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Idempotency-Key", "value": "{{$randomUUID}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourceAccountId\": \"{{accountId}}\",\n  \"destinationAccountId\": \"{{destinationAccountId}}\",\n  \"amount\": 300.00,\n  \"currency\": \"BRL\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/v1/transactions/transfer", "host": [ "{{baseUrl}}" ], "path": [ "api", "v1", "transactions", "transfer" ] }
+      }
+    }
+  ]
+}

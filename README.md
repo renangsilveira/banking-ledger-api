@@ -171,6 +171,13 @@ curl -X POST http://localhost:8080/api/v1/transactions/transfer \
   -d '{"sourceAccountId": "<id>", "destinationAccountId": "<id>", "amount": 300.00, "currency": "BRL"}'
 ```
 
+### Try it yourself
+
+- Postman collection: [`docs/postman/collection.json`](docs/postman/collection.json) — covers health check, create account, deposit, withdraw, transfer, balance, and statement.
+- Swagger UI running locally:
+
+  ![Swagger UI — create account](docs/screenshots/swagger-create-account.png)
+
 ---
 
 ## Key technical decisions
